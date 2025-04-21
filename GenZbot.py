@@ -1,182 +1,239 @@
 import logging
 import random
 import re
+from collections import namedtuple
+
+# Fix Python2/Python3 incompatibility
+try:
+    input = raw_input
+except NameError:
+    pass
 
 log = logging.getLogger(__name__)
 
 
-class Trigger:
-    def __init__(self, term, priority, patterns):
-        self.term = term
-        self.priority = priority
-        self.patterns = patterns
+class Key:
+    def __init__(self, word, weight, decomps):
+        self.word = word
+        self.weight = weight
+        self.decomps = decomps
 
 
-class Pattern:
-    def __init__(self, parts, store_memory, responses):
+class Decomp:
+    def __init__(self, parts, save, reasmbs):
         self.parts = parts
-        self.store_memory = store_memory
-        self.responses = responses
-        self.index = 0
+        self.save = save
+        self.reasmbs = reasmbs
+        self.next_reasmb_index = 0
 
 
-class GenZAdvisor:
+class Eliza:
     def __init__(self):
-        self.greetings = []
-        self.goodbyes = []
-        self.exit_words = []
-        self.pre_subs = {}
-        self.post_subs = {}
-        self.synonyms = {}
-        self.triggers = {}
-        self.memory_bank = []
+        self.initials = []
+        self.finals = []
+        self.quits = []
+        self.pres = {}
+        self.posts = {}
+        self.synons = {}
+        self.keys = {}
+        self.memory = []
 
-    def load_data(self, filepath):
-        current_trigger = None
-        current_pattern = None
-        with open(filepath, encoding="utf-8") as f:
-            for line in f:
+    def load(self, path):
+        key = None
+        decomp = None
+        with open(path, encoding="utf-8") as file:
+            for line in file:
                 if not line.strip():
                     continue
-                tag, content = [p.strip() for p in line.split(":", 1)]
-
+                tag, content = [part.strip() for part in line.split(":")]
                 if tag == "initial":
-                    self.greetings.append(content)
+                    self.initials.append(content)
                 elif tag == "final":
-                    self.goodbyes.append(content)
+                    self.finals.append(content)
                 elif tag == "quit":
-                    self.exit_words.append(content)
+                    self.quits.append(content)
                 elif tag == "pre":
                     parts = content.split(" ")
-                    self.pre_subs[parts[0]] = parts[1:]
+                    self.pres[parts[0]] = parts[1:]
                 elif tag == "post":
                     parts = content.split(" ")
-                    self.post_subs[parts[0]] = parts[1:]
+                    self.posts[parts[0]] = parts[1:]
                 elif tag == "synon":
                     parts = content.split(" ")
-                    self.synonyms[parts[0]] = parts
+                    self.synons[parts[0]] = parts
                 elif tag == "key":
                     parts = content.split(" ")
-                    term = parts[0]
-                    priority = int(parts[1]) if len(parts) > 1 else 1
-                    current_trigger = Trigger(term, priority, [])
-                    self.triggers[term] = current_trigger
+                    word = parts[0]
+                    weight = int(parts[1]) if len(parts) > 1 else 1
+                    key = Key(word, weight, [])
+                    self.keys[word] = key
                 elif tag == "decomp":
                     parts = content.split(" ")
-                    store = False
+                    save = False
                     if parts[0] == "$":
-                        store = True
+                        save = True
                         parts = parts[1:]
-                    current_pattern = Pattern(parts, store, [])
-                    current_trigger.patterns.append(current_pattern)
+                    decomp = Decomp(parts, save, [])
+                    key.decomps.append(decomp)
                 elif tag == "reasmb":
                     parts = content.split(" ")
-                    current_pattern.responses.append(parts)
+                    decomp.reasmbs.append(parts)
 
-    def _recursive_match(self, parts, tokens, captures):
-        if not parts and not tokens:
+    def _match_decomp_r(self, parts, words, results):
+        if not parts and not words:
             return True
-        if not parts or (not tokens and parts != ["*"]):
+        if not parts or (not words and parts != ["*"]):
             return False
         if parts[0] == "*":
-            for i in range(len(tokens), -1, -1):
-                captures.append(tokens[:i])
-                if self._recursive_match(parts[1:], tokens[i:], captures):
+            for index in range(len(words), -1, -1):
+                results.append(words[:index])
+                if self._match_decomp_r(parts[1:], words[index:], results):
                     return True
-                captures.pop()
+                results.pop()
             return False
-        elif parts[0].startswith("@"):  # synonym
+        elif parts[0].startswith("@"):
             root = parts[0][1:]
-            if root not in self.synonyms:
+            if not root in self.synons:
+                raise ValueError("Unknown synonym root {}".format(root))
+            if not words[0].lower() in self.synons[root]:
                 return False
-            if tokens[0].lower() not in self.synonyms[root]:
-                return False
-            captures.append([tokens[0]])
-            return self._recursive_match(parts[1:], tokens[1:], captures)
-        elif parts[0].lower() != tokens[0].lower():
+            results.append([words[0]])
+            return self._match_decomp_r(parts[1:], words[1:], results)
+        elif parts[0].lower() != words[0].lower():
             return False
         else:
-            return self._recursive_match(parts[1:], tokens[1:], captures)
+            return self._match_decomp_r(parts[1:], words[1:], results)
 
-    def _get_response(self, pattern, captures):
-        response = pattern.responses[pattern.index % len(pattern.responses)]
-        pattern.index += 1
+    def _match_decomp(self, parts, words):
+        results = []
+        if self._match_decomp_r(parts, words, results):
+            return results
+        return None
+
+    def _next_reasmb(self, decomp):
+        index = decomp.next_reasmb_index
+        result = decomp.reasmbs[index % len(decomp.reasmbs)]
+        decomp.next_reasmb_index = index + 1
+        return result
+
+    def _reassemble(self, reasmb, results):
         output = []
-        for word in response:
-            if word.startswith("(") and word.endswith(")"):
-                idx = int(word[1:-1])
-                if 1 <= idx <= len(captures):
-                    segment = captures[idx - 1]
-                    output.extend(segment)
+        for reword in reasmb:
+            if not reword:
+                continue
+            if reword[0] == "(" and reword[-1] == ")":
+                index = int(reword[1:-1])
+                if index < 1 or index > len(results):
+                    raise ValueError("Invalid result index {}".format(index))
+                insert = results[index - 1]
+                for punct in [",", ".", ";"]:
+                    if punct in insert:
+                        insert = insert[: insert.index(punct)]
+                output.extend(insert)
+            else:
+                output.append(reword)
+        return output
+
+    def _sub(self, words, sub):
+        output = []
+        for word in words:
+            word_lower = word.lower()
+            if word_lower in sub:
+                output.extend(sub[word_lower])
             else:
                 output.append(word)
         return output
 
-    def _apply_subs(self, words, subs):
-        output = []
-        for w in words:
-            lw = w.lower()
-            if lw in subs:
-                output.extend(subs[lw])
-            else:
-                output.append(w)
-        return output
-
-    def _try_match(self, tokens, trigger):
-        for pattern in trigger.patterns:
-            captures = []
-            if self._recursive_match(pattern.parts, tokens, captures):
-                captures = [self._apply_subs(c, self.post_subs) for c in captures]
-                response = self._get_response(pattern, captures)
-                if pattern.store_memory:
-                    self.memory_bank.append(response)
-                    continue
-                return response
+    def _match_key(self, words, key):
+        for decomp in key.decomps:
+            results = self._match_decomp(decomp.parts, words)
+            if results is None:
+                log.debug("Decomp did not match: %s", decomp.parts)
+                continue
+            log.debug("Decomp matched: %s", decomp.parts)
+            log.debug("Decomp results: %s", results)
+            results = [self._sub(words, self.posts) for words in results]
+            log.debug("Decomp results after posts: %s", results)
+            reasmb = self._next_reasmb(decomp)
+            log.debug("Using reassembly: %s", reasmb)
+            if reasmb[0] == "goto":
+                goto_key = reasmb[1]
+                if not goto_key in self.keys:
+                    raise ValueError("Invalid goto key {}".format(goto_key))
+                log.debug("Goto key: %s", goto_key)
+                return self._match_key(words, self.keys[goto_key])
+            output = self._reassemble(reasmb, results)
+            if decomp.save:
+                self.memory.append(output)
+                log.debug("Saved to memory: %s", output)
+                continue
+            return output
         return None
 
-    def generate_reply(self, message):
-        if message.lower() in self.exit_words:
+    def respond(self, text):
+        if text.lower() in self.quits:
             return None
 
-        message = re.sub(r"\s*[.,;]+\s*", " ", message)
-        tokens = message.split()
-        tokens = self._apply_subs(tokens, self.pre_subs)
+        text = re.sub(r"\s*\.+\s*", " . ", text)
+        text = re.sub(r"\s*,+\s*", " , ", text)
+        text = re.sub(r"\s*;+\s*", " ; ", text)
+        log.debug("After punctuation cleanup: %s", text)
 
-        triggers_found = [
-            self.triggers[w.lower()] for w in tokens if w.lower() in self.triggers
-        ]
-        triggers_found = sorted(triggers_found, key=lambda t: -t.priority)
+        words = [w for w in text.split(" ") if w]
+        log.debug("Input: %s", words)
 
-        for trigger in triggers_found:
-            reply = self._try_match(tokens, trigger)
-            if reply:
-                return " ".join(reply)
+        words = self._sub(words, self.pres)
+        log.debug("After pre-substitution: %s", words)
 
-        if self.memory_bank:
-            return " ".join(
-                self.memory_bank.pop(random.randrange(len(self.memory_bank)))
-            )
+        keys = [self.keys[w.lower()] for w in words if w.lower() in self.keys]
+        keys = sorted(keys, key=lambda k: -k.weight)
+        log.debug("Sorted keys: %s", [(k.word, k.weight) for k in keys])
 
-        fallback = self.triggers["xnone"].patterns[0]
-        return " ".join(self._get_response(fallback, []))
+        output = None
 
-    def start_chat(self):
-        print(random.choice(self.greetings))
-        while True:
-            user_input = input("You: ")
-            bot_reply = self.generate_reply(user_input)
-            if bot_reply is None:
+        for key in keys:
+            output = self._match_key(words, key)
+            if output:
+                log.debug("Output from key: %s", output)
                 break
-            print("Bot:", bot_reply)
-        print(random.choice(self.goodbyes))
+        if not output:
+            if self.memory:
+                index = random.randrange(len(self.memory))
+                output = self.memory.pop(index)
+                log.debug("Output from memory: %s", output)
+            else:
+                output = self._next_reasmb(self.keys["xnone"].decomps[0])
+                log.debug("Output from xnone: %s", output)
+
+        return " ".join(output)
+
+    def initial(self):
+        return random.choice(self.initials)
+
+    def final(self):
+        return random.choice(self.finals)
+
+    def run(self):
+        print(self.initial())
+
+        while True:
+            sent = input("> ")
+
+            output = self.respond(sent)
+            if output is None:
+                break
+
+            print(output)
+
+        print(self.final())
 
 
 def main():
-    bot = GenZAdvisor()
-    bot.load_data("wdyc.txt")
-    bot.start_chat()
+    eliza = Eliza()
+    eliza.load("doctor.txt")
+    eliza.run()
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.ERROR)
+    logging.basicConfig()
     main()
