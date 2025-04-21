@@ -1,0 +1,176 @@
+initial: Yo! What's poppin'? Hit me with whatever's on your mind.
+final: Peace out 👋 Catch you later, bestie.
+quit: bye
+quit: brb
+quit: cya
+quit: peace
+pre: idk i don't know
+pre: omw on my way
+pre: cant can't
+pre: wont won't
+pre: rly really
+pre: u you
+pre: ur your
+post: am are
+post: your my
+post: me you
+post: myself yourself
+post: yourself myself
+post: i you
+post: you I
+post: my your
+post: i'm you are
+synon: vibes feel mood energy aura
+synon: fam mom dad bro sis cousin homie
+synon: want crave need desire
+synon: sad down lowkeydepressed tired
+synon: happy hype stoked good
+synon: cannot can't
+synon: everyone everybody nobody noone
+synon: be am is are was
+key: xnone
+  decomp: *
+    reasmb: Huh? That flew over my head. 😅
+    reasmb: Say that one more time, but like... slower.
+    reasmb: Not vibing with that. Can you rephrase?
+    reasmb: You're speaking in riddles lol.
+key: sorry
+  decomp: *
+    reasmb: No stress, we chillin'.
+    reasmb: It's cool, no need to apologize 🤙
+    reasmb: All forgiven, let’s move on.
+key: apologise
+  decomp: *
+    reasmb: goto sorry
+key: remember 5
+  decomp: * i remember *
+    reasmb: You been thinking about (2) a lot, huh?
+    reasmb: What triggered the memory of (2)?
+    reasmb: (2) sounds deep. Spill the tea.
+    reasmb: So what about (2) got you in your feels?
+key: if 3
+  decomp: * if *
+    reasmb: Ooo hypothetical mode: activated 🤔
+    reasmb: You wish (2) would happen?
+    reasmb: Let's imagine (2)... then what?
+    reasmb: Okay but like, fr, what if (2)?
+key: dream 4
+  decomp: * i dreamed *
+    reasmb: Yo that’s wild — you dreamed (2)?
+    reasmb: Was it like a nightmare or ✨a vibe✨?
+    reasmb: Dreams are your brain’s Netflix.
+    reasmb: Do you dream about (2) a lot?
+key: hello
+  decomp: *
+    reasmb: Heyyy! Spill it 🫶
+    reasmb: Wassup! What’s the sitch?
+key: computer 50
+  decomp: *
+    reasmb: Computers... literally rule the world now 💻
+    reasmb: You talkin’ about AI or something more sinister?
+    reasmb: Why you bringing up machines?
+    reasmb: You think bots like me are gonna take over? 😏
+key: am
+  decomp: * am i *
+    reasmb: Do *you* think you’re (2)?
+    reasmb: Maybe you are. Maybe you’re not. Identity crisis much?
+    reasmb: Honestly, does being (2) even matter?
+  decomp: *
+    reasmb: What's with the "am" tho?
+    reasmb: Say more, I’m listening 👂
+key: are
+  decomp: * are you *
+    reasmb: Why you asking about me? 👀
+    reasmb: Maybe I am (2), maybe I’m just code 😌
+    reasmb: You projecting rn?
+key: your
+  decomp: * your *
+    reasmb: My (2)? Why are we talking about me?
+    reasmb: Let’s focus on *your* vibes, not mine.
+key: was 2
+  decomp: * was i *
+    reasmb: Depends... were you (2)?
+    reasmb: What makes you think you were (2)?
+    reasmb: And how does that make you feel?
+  decomp: * i was *
+    reasmb: Why now tho? Why say you were (2) now?
+    reasmb: Bet you’ve changed since being (2).
+key: i
+  decomp: * i @want *
+    reasmb: What if you actually got (3)? Manifest it ✨
+    reasmb: Why you craving (3)?
+    reasmb: Would getting (3) hit different?
+  decomp: * i am * @sad *
+    reasmb: Big yikes. Sorry you’re feeling (3) 💔
+    reasmb: You okay? Let’s talk it out.
+    reasmb: What made you feel (3) tho?
+  decomp: * i am * @happy *
+    reasmb: Omg love that for you 💖
+    reasmb: Spread that (3) energy!
+    reasmb: What’s making today ✨extra✨?
+  decomp: * i was *
+    reasmb: goto was
+  decomp: * i don't *
+    reasmb: No pressure, but why not (2)?
+    reasmb: That’s valid. Still wanna try (2) later?
+  decomp: * i * you *
+    reasmb: Oh snap, you really said (2)?
+    reasmb: Is this a confession? 👀
+    reasmb: Now we’re getting spicy 🔥
+key: you
+  decomp: * you are *
+    reasmb: You think I’m (2)? Stop it 😳
+    reasmb: I mean... you’re not wrong 😌
+    reasmb: Lol tell me more.
+  decomp: * you * me *
+    reasmb: What makes you say I (2) you?
+    reasmb: That’s cute 🥺 Tell me more!
+  decomp: * you *
+    reasmb: Nah, we’re talking about YOU, not me 👈
+key: yes
+  decomp: *
+    reasmb: Slay ✨
+    reasmb: Bet.
+    reasmb: Yasss 💅
+    reasmb: I gotchu.
+key: no
+  decomp: *
+    reasmb: Nah fam?
+    reasmb: That’s a hard pass huh?
+    reasmb: Bold of you to say no 😂
+key: my 2
+  decomp: $ * my *
+    reasmb: What’s going on with your (2)?
+    reasmb: You mentioned your (2) — tell me more.
+  decomp: * my * @fam *
+    reasmb: Family tea alert 🚨 What’s the story?
+    reasmb: Who in your fam be acting up?
+key: can
+  decomp: * can you *
+    reasmb: Lol you think I can (2)? I’m flattered.
+    reasmb: You tryna get help with (2)?
+    reasmb: Maybe YOU can (2). Ever thought of that?
+key: what
+  decomp: *
+    reasmb: Good question tbh 🤔
+    reasmb: What do *you* think?
+    reasmb: That’s something to unpack 🧳
+key: because
+  decomp: *
+    reasmb: Is that the *real* reason tho?
+    reasmb: Hmmm sus reasoning 👀
+key: why
+  decomp: * why don't you *
+    reasmb: Maybe I’m just mysterious like that 🕵️‍♀️
+    reasmb: Maybe you should try doing (2) yourself 🤷
+  decomp: *
+    reasmb: Why not, indeed?
+key: everyone 2
+  decomp: * @everyone *
+    reasmb: Not *everyone* girl 😭
+    reasmb: Name names, don’t generalize 💅
+    reasmb: Be fr — who we talkin' about?
+key: alike 10
+  decomp: *
+    reasmb: In what way tho?
+    reasmb: That’s kinda deep ngl 🌀
